@@ -71,6 +71,10 @@ typedef UITextAlignment TTTTextAlignment;
 typedef UILineBreakMode TTTLineBreakMode;
 #endif
 
+const NSString *TTTFontAttributeName;
+const NSString *TTTForegroundColorAttributeName;
+const NSString *TTTKernAttributeName;
+const NSString *TTTParagraphStyleAttributeName;
 
 static inline CTTextAlignment CTTextAlignmentFromTTTTextAlignment(TTTTextAlignment alignment) {
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 60000
@@ -163,9 +167,9 @@ static inline NSDictionary * NSAttributedStringAttributesFromLabel(TTTAttributed
     NSMutableDictionary *mutableAttributes = [NSMutableDictionary dictionary];
 
     if ([NSMutableParagraphStyle class]) {
-        [mutableAttributes setObject:label.font forKey:(NSString *)kCTFontAttributeName];
-        [mutableAttributes setObject:label.textColor forKey:(NSString *)kCTForegroundColorAttributeName];
-        [mutableAttributes setObject:@(label.kern) forKey:(NSString *)kCTKernAttributeName];
+        [mutableAttributes setObject:label.font forKey:TTTFontAttributeName];
+        [mutableAttributes setObject:label.textColor forKey:TTTForegroundColorAttributeName];
+        [mutableAttributes setObject:@(label.kern) forKey:TTTKernAttributeName];
 
         NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
         paragraphStyle.alignment = label.textAlignment;
@@ -181,14 +185,14 @@ static inline NSDictionary * NSAttributedStringAttributesFromLabel(TTTAttributed
             paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
         }
 
-        [mutableAttributes setObject:paragraphStyle forKey:(NSString *)kCTParagraphStyleAttributeName];
+        [mutableAttributes setObject:paragraphStyle forKey:TTTParagraphStyleAttributeName];
     } else {
         CTFontRef font = CTFontCreateWithName((__bridge CFStringRef)label.font.fontName, label.font.pointSize, NULL);
-        [mutableAttributes setObject:(__bridge id)font forKey:(NSString *)kCTFontAttributeName];
+        [mutableAttributes setObject:(__bridge id)font forKey:TTTFontAttributeName];
         CFRelease(font);
 
-        [mutableAttributes setObject:(id)[label.textColor CGColor] forKey:(NSString *)kCTForegroundColorAttributeName];
-        [mutableAttributes setObject:@(label.kern) forKey:(NSString *)kCTKernAttributeName];
+        [mutableAttributes setObject:(id)[label.textColor CGColor] forKey:TTTForegroundColorAttributeName];
+        [mutableAttributes setObject:@(label.kern) forKey:TTTKernAttributeName];
 
         CTTextAlignment alignment = CTTextAlignmentFromTTTTextAlignment(label.textAlignment);
         CGFloat lineSpacing = label.lineSpacing;
@@ -216,7 +220,7 @@ static inline NSDictionary * NSAttributedStringAttributesFromLabel(TTTAttributed
 
         CTParagraphStyleRef paragraphStyle = CTParagraphStyleCreate(paragraphStyles, 12);
 
-        [mutableAttributes setObject:(__bridge id)paragraphStyle forKey:(NSString *)kCTParagraphStyleAttributeName];
+        [mutableAttributes setObject:(__bridge id)paragraphStyle forKey:TTTParagraphStyleAttributeName];
 
         CFRelease(paragraphStyle);
     }
@@ -240,9 +244,9 @@ static inline NSAttributedString * NSAttributedStringByScalingFontSize(NSAttribu
                 pointSize = CTFontGetSize((__bridge CTFontRef)font);
             }
 
-            [mutableAttributedString removeAttribute:(NSString *)kCTFontAttributeName range:range];
+            [mutableAttributedString removeAttribute:TTTFontAttributeName range:range];
             CTFontRef fontRef = CTFontCreateWithName((__bridge CFStringRef)fontName, CGFloat_floor(pointSize * scale), NULL);
-            [mutableAttributedString addAttribute:(NSString *)kCTFontAttributeName value:(__bridge id)fontRef range:range];
+            [mutableAttributedString addAttribute:TTTFontAttributeName value:(__bridge id)fontRef range:range];
             CFRelease(fontRef);
         }
     }];
@@ -259,7 +263,7 @@ static inline NSAttributedString * NSAttributedStringBySettingColorFromContext(N
     [mutableAttributedString enumerateAttribute:(NSString *)kCTForegroundColorFromContextAttributeName inRange:NSMakeRange(0, [mutableAttributedString length]) options:0 usingBlock:^(id value, NSRange range, __unused BOOL *stop) {
         BOOL usesColorFromContext = (BOOL)value;
         if (usesColorFromContext) {
-            [mutableAttributedString setAttributes:[NSDictionary dictionaryWithObject:color forKey:(NSString *)kCTForegroundColorAttributeName] range:range];
+            [mutableAttributedString setAttributes:[NSDictionary dictionaryWithObject:color forKey:TTTForegroundColorAttributeName] range:range];
             [mutableAttributedString removeAttribute:(NSString *)kCTForegroundColorFromContextAttributeName range:range];
         }
     }];
@@ -345,6 +349,18 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
                 class_replaceMethod(class, selector, superImplementation, types);
             }
         }
+
+        if (kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iOS_6_0) {
+            TTTFontAttributeName = (NSString *)kCTFontAttributeName;
+            TTTForegroundColorAttributeName = (NSString *)kCTForegroundColorAttributeName;
+            TTTKernAttributeName = (NSString *)kCTKernAttributeName;
+            TTTParagraphStyleAttributeName = (NSString *)kCTParagraphStyleAttributeName;
+        } else {
+            TTTFontAttributeName = NSFontAttributeName;
+            TTTForegroundColorAttributeName = NSForegroundColorAttributeName;
+            TTTKernAttributeName = NSKernAttributeName;
+            TTTParagraphStyleAttributeName = NSParagraphStyleAttributeName;
+        }
     });
 }
 #endif
@@ -372,29 +388,29 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     self.linkBackgroundEdgeInset = UIEdgeInsetsMake(0.0f, -1.0f, 0.0f, -1.0f);
 
     NSMutableDictionary *mutableLinkAttributes = [NSMutableDictionary dictionary];
-    [mutableLinkAttributes setObject:[NSNumber numberWithBool:YES] forKey:(NSString *)kCTUnderlineStyleAttributeName];
+    [mutableLinkAttributes setObject:[NSNumber numberWithBool:YES] forKey:NSUnderlineStyleAttributeName];
 
     NSMutableDictionary *mutableActiveLinkAttributes = [NSMutableDictionary dictionary];
-    [mutableActiveLinkAttributes setObject:[NSNumber numberWithBool:NO] forKey:(NSString *)kCTUnderlineStyleAttributeName];
+    [mutableActiveLinkAttributes setObject:[NSNumber numberWithBool:NO] forKey:NSUnderlineStyleAttributeName];
 
     NSMutableDictionary *mutableInactiveLinkAttributes = [NSMutableDictionary dictionary];
-    [mutableInactiveLinkAttributes setObject:[NSNumber numberWithBool:NO] forKey:(NSString *)kCTUnderlineStyleAttributeName];
+    [mutableInactiveLinkAttributes setObject:[NSNumber numberWithBool:NO] forKey:NSUnderlineStyleAttributeName];
 
     if ([NSMutableParagraphStyle class]) {
-        [mutableLinkAttributes setObject:[UIColor blueColor] forKey:(NSString *)kCTForegroundColorAttributeName];
-        [mutableActiveLinkAttributes setObject:[UIColor redColor] forKey:(NSString *)kCTForegroundColorAttributeName];
-        [mutableInactiveLinkAttributes setObject:[UIColor grayColor] forKey:(NSString *)kCTForegroundColorAttributeName];
+        [mutableLinkAttributes setObject:[UIColor blueColor] forKey:TTTForegroundColorAttributeName];
+        [mutableActiveLinkAttributes setObject:[UIColor redColor] forKey:TTTForegroundColorAttributeName];
+        [mutableInactiveLinkAttributes setObject:[UIColor grayColor] forKey:TTTForegroundColorAttributeName];
 
         NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
         paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
 
-        [mutableLinkAttributes setObject:paragraphStyle forKey:(NSString *)kCTParagraphStyleAttributeName];
-        [mutableActiveLinkAttributes setObject:paragraphStyle forKey:(NSString *)kCTParagraphStyleAttributeName];
-        [mutableInactiveLinkAttributes setObject:paragraphStyle forKey:(NSString *)kCTParagraphStyleAttributeName];
+        [mutableLinkAttributes setObject:paragraphStyle forKey:TTTParagraphStyleAttributeName];
+        [mutableActiveLinkAttributes setObject:paragraphStyle forKey:TTTParagraphStyleAttributeName];
+        [mutableInactiveLinkAttributes setObject:paragraphStyle forKey:TTTParagraphStyleAttributeName];
     } else {
-        [mutableLinkAttributes setObject:(__bridge id)[[UIColor blueColor] CGColor] forKey:(NSString *)kCTForegroundColorAttributeName];
-        [mutableActiveLinkAttributes setObject:(__bridge id)[[UIColor redColor] CGColor] forKey:(NSString *)kCTForegroundColorAttributeName];
-        [mutableInactiveLinkAttributes setObject:(__bridge id)[[UIColor grayColor] CGColor] forKey:(NSString *)kCTForegroundColorAttributeName];
+        [mutableLinkAttributes setObject:(__bridge id)[[UIColor blueColor] CGColor] forKey:TTTForegroundColorAttributeName];
+        [mutableActiveLinkAttributes setObject:(__bridge id)[[UIColor redColor] CGColor] forKey:TTTForegroundColorAttributeName];
+        [mutableInactiveLinkAttributes setObject:(__bridge id)[[UIColor grayColor] CGColor] forKey:TTTForegroundColorAttributeName];
 
         CTLineBreakMode lineBreakMode = kCTLineBreakByWordWrapping;
         CTParagraphStyleSetting paragraphStyles[1] = {
@@ -1006,7 +1022,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 				}
 
                 // Use text color, or default to black
-                id color = [attributes objectForKey:(id)kCTForegroundColorAttributeName];
+                id color = [attributes objectForKey:(id)TTTForegroundColorAttributeName];
                 if (color) {
                     if ([color isKindOfClass:[UIColor class]]) {
                         CGContextSetStrokeColorWithColor(c, [color CGColor]);
@@ -1249,7 +1265,7 @@ afterInheritingLabelAttributesAndConfiguringWithBlock:(NSMutableAttributedString
         // Finally, draw the text or highlighted text itself (on top of the shadow, if there is one)
         if (self.highlightedTextColor && self.highlighted) {
             NSMutableAttributedString *highlightAttributedString = [self.renderedAttributedText mutableCopy];
-            [highlightAttributedString addAttribute:(__bridge NSString *)kCTForegroundColorAttributeName value:(id)[self.highlightedTextColor CGColor] range:NSMakeRange(0, highlightAttributedString.length)];
+            [highlightAttributedString addAttribute:(NSString *)TTTForegroundColorAttributeName value:(id)[self.highlightedTextColor CGColor] range:NSMakeRange(0, highlightAttributedString.length)];
 
             if (![self highlightFramesetter]) {
                 CTFramesetterRef highlightFramesetter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)highlightAttributedString);
